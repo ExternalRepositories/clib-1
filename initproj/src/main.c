@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
 	fprintf(mainc,
 		"#include <stdio.h>\n\n"
 		"int main(void) {\n"
-		"\tprintf(\"Hello, World\");\n"
+		"\tprintf(\"Hello, World\\n\");\n"
 		"}\n");
 
 	fprintf(makefile,
