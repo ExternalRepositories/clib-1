@@ -24,12 +24,6 @@ typedef struct array {
 	size_t size;
 } array_t;
 
-typedef struct string {
-	char * data;
-	size_t size;
-	size_t mem;
-} string_t;
-
 typedef void (*foreach_callback_t)(void *, va_list);
 
 list_t list_create();
@@ -49,15 +43,6 @@ void	array_unsorted_remove(array_t *array, size_t index);
 void	array_from(array_t *array, void *static_array, size_t element_size, size_t elements);
 // void	array_foreach(array_t *array, void (*callback)(void *, va_list), ...);
 void array_free(array_t *array, void (*callback)(void *));
-
-string_t str_create();
-string_t str_from_literal(const char *literal);
-void	 str_emplace(string_t *str);
-void	 str_cat(string_t *dest, const char *src, size_t len);
-int		 str_cmp(const string_t *str, const char *with, size_t len);
-void	 str_cpy(string_t *dest, const char *src, size_t len);
-void	 str_clear(string_t *str);
-void	 str_free(string_t *str);
 
 #define array_create(type, number_of_elements) array_create_impl(sizeof(type), number_of_elements)
 
@@ -86,6 +71,7 @@ void	 str_free(string_t *str);
 #endif /* C_LIB_COMPONENTS_H */
 
 #ifdef C_LIB_COMPONENTS_IMPLEMENTATION
+#undef C_LIB_COMPONENTS_IMPLEMENTATION
 #include "utils.h"
 
 #include <stdarg.h>
@@ -212,70 +198,6 @@ void array_from(array_t *array, void *static_array, size_t element_size, size_t 
 void array_free(array_t *array, void (*callback)(void *)) {
 	array_foreach_cb(array, callback);
 	free(array->data);
-}
-
-string_t str_create() {
-	string_t str;
-	str.data = calloc(STRING_DEFAULT_SIZE, 1);
-	str.size = 0;
-	str.mem	 = STRING_DEFAULT_SIZE;
-	return str;
-}
-
-string_t str_from_literal(const char *literal) {
-	string_t str = str_create();
-	str_cpy(&str, literal, strlen(literal));
-	return str;
-}
-
-void str_emplace(string_t *str) {
-	*str = str_create();
-}
-
-static void str_alloc(
-	string_t *str,	  /// String to be resized
-	size_t	  mem_req) { /// Minimum memory to be allocated
-
-	mem_req++; /// add 1 char for zero term
-	if (mem_req > str->mem - str->size) {
-		size_t lhs = 2 * str->mem;
-		size_t rhs = str->mem + mem_req + STRING_DEFAULT_SIZE;
-		str->mem   = MAX(lhs, rhs);
-		str->data  = realloc(str->data, str->mem);
-	}
-}
-
-void str_cat(string_t *dest, const char *src, size_t len) {
-	if (!len) return;
-	str_alloc(dest, len);
-	memcpy(dest->data + dest->size, src, (len));
-	dest->size += len;
-	dest->data[dest->size] = 0;
-}
-
-int str_cmp(const string_t *str, const char *with, size_t len) {
-	if (str->size == len) return memcmp(str->data, with, str->size);
-	int res = memcmp(str->data, with, MIN(str->size, len));
-	if (!res) return str->size < len ? -1 : 1;
-	return res;
-}
-
-void str_cpy(string_t *dest, const char *src, size_t len) {
-	if (dest->data == src) {
-		dest->size			   = len;
-		dest->data[dest->size] = 0;
-	}
-	dest->size = 0;
-	str_cat(dest, src, len);
-}
-
-void str_clear(string_t *str) {
-	str->size = 0;
-	if (str->data) *str->data = 0;
-}
-
-void str_free(string_t *str) {
-	free(str->data);
 }
 
 #endif
