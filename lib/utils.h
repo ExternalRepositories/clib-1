@@ -6,6 +6,7 @@
 
 #define MAX(X, Y) (X > Y ? X : Y)
 #define MIN(X, Y) (X < Y ? X : Y)
+#define CAR(X, ...) X
 
 #define repeat(_var_name, _until) for (size_t _var_name = 0, _until_val = _until; _var_name < _until_val; _var_name++)
 

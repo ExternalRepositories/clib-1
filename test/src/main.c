@@ -5,6 +5,8 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define MAX_F_LEN 1023
 
@@ -56,10 +58,11 @@ __attribute__((format(printf, 1, 2))) void error(const char *fmt, ...) {
 	case sig:                  \
 		return #sig;
 
-#define SIGNAL_HANDLER_REG(sig)                                    \
-	if (signal(sig, sig_handler) == SIG_ERR) {                     \
-		error("Could not initialise signal handler for %s", #sig); \
-		exit(1);                                                   \
+#define SIGNAL_HANDLER_REG(sig)                                      \
+	if (signal(sig, sig_handler) == SIG_ERR) {                       \
+		error("Could not initialise signal handler for " #sig "\n"); \
+		perror("");                                                  \
+		exit(1);                                                     \
 	}
 
 static const char *sig_name(int sig) {
@@ -100,37 +103,70 @@ void sig_init(void) {
 
 #define ASSERT(cond, ...)                                                \
 	if (!(cond)) {                                                       \
-		error("Assertion \033[32m%s\033[31m failed\n", STRINGISE(cond));       \
-		__VA_ARGS__;                                                           \
+		error("Assertion \033[32m%s\033[31m failed\n", STRINGISE(cond)); \
+		printf(__VA_ARGS__);                                             \
 		exit(1);                                                         \
 	}
 
-#define SIG_DEFAULT(sig)                                                   \
-	if (signal(sig, SIG_DFL) == SIG_ERR) {                                 \
-		error("Could not initialise default signal handler for %s", #sig); \
-		exit(1);                                                           \
+#define SIG_DEFAULT(sig)                                            \
+	if (signal(sig, SIG_DFL) == SIG_ERR) {                          \
+		error("Could not set default signal handler for %s", #sig); \
+		exit(1);                                                    \
 	}
 
 int main(void) {
+	/// ╔═══════════════════════════╦═══════════════╦═══════════════════════════╗
+	/// ╠═══════════════════════════╣  array tests  ╠═══════════════════════════╣
+	/// ╚═══════════════════════════╩═══════════════╩═══════════════════════════╝
 	array_t arr;
 	TEST("array_create", arr = array_create(int, 25);)
-	ASSERT(arr.allocated == 25 && arr.size == 0 && arr.size_of_type == sizeof(int))
+	ASSERT(arr.allocated == 25 && arr.size == 0 && arr.size_of_type == sizeof(int), "")
 
-	TEST("array_append", repeat(i, 25) array_append(&arr, i);)
-	ASSERT(arr.size == 25)
+	TEST("array_append", repeat(i, 25) array_append(size_t, &arr, i);)
+	ASSERT(arr.size == 25, "")
 
 	TEST("array_foreach", array_foreach(int, i, arr) printf("%d", *i);)
+
 	TEST("array_foreach", array_foreach(int, i, arr) *i = 47;)
+
+	printf("\n");
+
 	TEST("array_foreach", array_foreach(int, i, arr) printf("%d", *i);)
 
 	printf("\n");
 
-	string_t s;
+	/// ╔═══════════════════════════╦════════════════╦═══════════════════════════╗
+	/// ╠═══════════════════════════╣  string tests  ╠═══════════════════════════╣
+	/// ╚═══════════════════════════╩════════════════╩═══════════════════════════╝
+
+	string s, s1, s2;
 	TEST("str", s = str();)
-	ASSERT(__str_is_small(&s))
+	ASSERT(__str_is_small(&s), "")
 
-	TEST("str_cpy_l", str_cpy_l(&s, "Bla Bla bLaj");)
-	ASSERT(strlen(s.data) == strlen("Bla Bla bLaj"), printf("%lu != %lu\n", strlen(s.data), strlen("Bla Bla bLaj")))
+	{
+		const char  *_data = "Bla Bla bla\n";
+		const size_t _len  = strlen(_data);
+		size_t		 s_len;
+		TEST("str_cpy_l", str_cpy(&s, _data);)
+		ASSERT(strlen(s._M_small_data) == _len, "strlen: %lu != %lu\n", strlen(s._M_small_data), _len)
 
-	TEST("printf(s.data)", printf("%s", s.data);)
+		TEST("Value: ", printf("%s", str_data(&s)));
+
+		TEST("str_len", s_len = str_len(&s))
+		ASSERT(s_len == _len, "str_len: %lu != %lu\n", s_len, _len)
+
+		ASSERT(__str_is_small(&s), "")
+	}
+
+	TEST("str_clear", str_clear(&s))
+	else s = str();
+	ASSERT(str_len(&s) == 0, "str_len not 0 after call to str_clear")
+
+	TEST("printf(str_data(&s)) ", printf("%s", str_data(&s));)
+
+	TEST("str_from", s1 = str("Short string"))
+	TEST("str_from", s2 = str("Long string Long string Long string Long string Long string Long string Long string"))
+
+	ASSERT(__str_is_small(&s1), "")
+	ASSERT(!__str_is_small(&s2), "")
 }

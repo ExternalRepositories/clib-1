@@ -46,9 +46,9 @@ void array_free(array_t *array, void (*callback)(void *));
 
 #define array_create(type, number_of_elements) array_create_impl(sizeof(type), number_of_elements)
 
-#define array_append(array, element)             \
+#define array_append(type, array, element)             \
 	do {                                         \
-		typeof(element) _el = element;           \
+		type _el = element;           \
 		array_append_impl(array, (void *) &_el); \
 	} while (0)
 

@@ -1,8 +1,8 @@
 OUT = test
 SRC = $(wildcard src/*.c)
-HEADERS = $(wildcard src/*.h)
+HEADERS = $(wildcard src/*.h ../lib/*.h)
 
-CFLAGS = -Wall -Wextra -Wundef -Werror=return-type -march=native
+CFLAGS = -Wall -Wextra -Wundef -Werror=return-type -march=native -std=c17 -Wno-unused-function
 
 .PHONY: all clean debug install
 
