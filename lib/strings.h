@@ -435,11 +435,30 @@ void str_free(string *__str) {
 ///  '// clang-format off' doesn't work with '///'!
 // clang-format off
 
+/// Dummy type that represents no argument
 struct __generic_no_arg { } __generic_no_arg;
 
-#		define _GENERIC_TYPE_OR_NULL(...) CAR(__VA_ARGS__ __VA_OPT__(, ) __generic_no_arg)
+#		define _INT_TYPES(F) \
+			F(i8) \
+			F(i16) \
+			F(i32) \
+			F(i64) \
+			F(u8) \
+			F(u16) \
+			F(u32) \
+			F(u64) \
+			F(const i8) \
+			F(const i16) \
+			F(const i32) \
+			F(const i64) \
+			F(const u8) \
+			F(const u16) \
+			F(const u32) \
+			F(const u64) \
 
-#		define str(...) _Generic((_GENERIC_TYPE_OR_NULL(__VA_ARGS__)),	\
+#		define _GENERIC_TYPE_OR_NONE(...) CAR(__VA_ARGS__ __VA_OPT__(, ) __generic_no_arg)
+
+#		define str(...) _Generic((_GENERIC_TYPE_OR_NONE(__VA_ARGS__)),	\
 				string * : str_dup,							\
 				char *     : str_from,                                         \
 				const char *     : str_from, 						\
@@ -458,11 +477,15 @@ struct __generic_no_arg { } __generic_no_arg;
 				char *     : str_cpy_l                                            \
 			)(__string, __string_like)
 
-#		define str_cat(__string, __string_like) _Generic((__string_like),	\
+#		define __str_cat_l_wrapper_F(_type) _type : strn_cat,
+#		define str_cat_l_wrapper(...) _Generic((__VA_ARGS__), \
+				_INT_TYPES(__str_cat_l_wrapper_F)                                \
+				struct __generic_no_arg : str_cat_l)
+#		define str_cat(__string, __string_like, ...) _Generic((__string_like),	\
 				string * : str_cat,     	                                    \
-				const char *     : str_cat_l, 											\
-				char *     : str_cat_l 											\
-			)(__string, __string_like)
+				const char *     : str_cat_l_wrapper(_GENERIC_TYPE_OR_NONE(__VA_ARGS__)), 											\
+				char *     : str_cat_l_wrapper(_GENERIC_TYPE_OR_NONE(__VA_ARGS__)) 											\
+			)(__string, __string_like __VA_OPT__(,) __VA_ARGS__)
 
 #		define str_cmp(__string, __string_like) _Generic((__string_like),	\
 				string * : str_cmp,         	        \
@@ -470,7 +493,7 @@ struct __generic_no_arg { } __generic_no_arg;
 				char *     : str_cmp_l 				\
 			)(__string, __string_like)
 
-#		define str_rev(__string_like) _Generic((__string_like), \
+#		define str_rev(__string_like) _Generistruct __generic_no_arg c((__string_like), \
 				string* : str_rev									\
 				char *    : str_rev_l 								\
 			)(__string_like)

@@ -168,6 +168,26 @@ void tests_strings_1(void) {
 	printf("%s\n%s\n", str_data(&s1), str_data(&s2));
 }
 
+void tests_strings_2(void) {
+	string s1 = str(), s2 = str();
+	for (char c = 'a'; c <= 'z'; c++) {
+		TEST("strn_cat", str_cat(&s1, &c, 1))
+	}
+	TEST("str_cpy_l", str_cpy(&s2, "abcdefghijklmnopqrstuvwxyz"));
+
+	ASSERT(str_len(&s1) == 26, "")
+	ASSERT(str_len(&s2) == 26, "")
+	ASSERT(!str_cmp(&s1, &s2), "")
+
+	TEST("printf", printf("%s\n%s\n", str_data(&s1), str_data(&s2)));
+
+	u64 size = s1.__long_capacity;
+	TEST("str_clear", str_clear(&s1))
+	ASSERT(!str_len(&s1), "")
+	ASSERT(size == s1.__long_capacity, "")
+	ASSERT(*str_data(&s1) == 0, "")
+}
+
 void tests_strings_file(void) {
 	extern char *realpath(const char *__name, char *__resolved);
 
@@ -201,7 +221,7 @@ void tests_strings_file(void) {
 	string s	= str();
 	for (;;) {
 		read = fread(buf, 1, 1024, f);
-		strn_cat(&s, buf, read);
+		str_cat(&s, buf, read);
 		memset(buf, 0, 1024);
 		if (read < 1024) break;
 	}
@@ -212,14 +232,15 @@ void tests_strings_file(void) {
 }
 
 int main(void) {
-	void (*tests[])(void) = {tests_array, tests_strings_1, tests_strings_file};
+	void (*tests[])(void) = {tests_array, tests_strings_1, tests_strings_2, tests_strings_file};
 	u64 tests_size		  = sizeof tests / sizeof *tests;
 
 	printf("\033[32mTests:\n"
 		   "    \033[32m0\033[33m all\n"
 		   "    \033[32m1\033[33m arrays\n"
 		   "    \033[32m2\033[33m strings: basic tests\n"
-		   "    \033[32m3\033[33m strings: read/write file\n"
+		   "    \033[32m3\033[33m strings: cat/cpy/clear\n"
+		   "    \033[32m4\033[33m strings: read/write file\n"
 		   "\033[32mSelect test to run: \033[0m");
 	u64 test = 0;
 	int ret	 = scanf("%lu", &test);
