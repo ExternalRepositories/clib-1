@@ -2,7 +2,7 @@ OUT = test
 SRC = $(wildcard src/*.c)
 HEADERS = $(wildcard src/*.h ../lib/*.h)
 
-CFLAGS = -Wall -Wextra -Wundef -Werror=return-type -march=native -std=c17 -Wno-unused-function
+CFLAGS = -Wall -Wextra -Wundef -Werror=return-type -march=native -std=c17 -Wno-unused-function -DLITTLE_ENDIAN
 
 .PHONY: all clean debug install
 

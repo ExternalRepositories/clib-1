@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define MAX(X, Y) (X > Y ? X : Y)
-#define MIN(X, Y) (X < Y ? X : Y)
+#define MAX(X, Y)	(X > Y ? X : Y)
+#define MIN(X, Y)	(X < Y ? X : Y)
 #define CAR(X, ...) X
 
 #define repeat(_var_name, _until) for (size_t _var_name = 0, _until_val = _until; _var_name < _until_val; _var_name++)
@@ -49,20 +49,20 @@ u64 between(u64 __what, u64 __a, u64 __b) {
 }
 
 //__attribute__((always_inline))
-//size_t
+// size_t
 //	__Ceil_power_of2_intrin(size_t __n) {
 //	return (__n & (1 << (((sizeof(size_t) << 3) - _lzcnt_u64(__n)) - 1))) << 1;
 //}
 //
 //__attribute__((always_inline))
-//size_t
+// size_t
 //	__Ceil_power_of2_C(size_t __n) {
 //	size_t __power = 1;
 //	while (__n > __power) __power <<= 1;
 //	return __power;
 //}
 //
-//static size_t (*__Ceil_power_of2_res(void))(size_t) {
+// static size_t (*__Ceil_power_of2_res(void))(size_t) {
 //	__builtin_cpu_init();
 //	if (__builtin_cpu_supports("avx")) return __Ceil_power_of2_intrin;
 //	else

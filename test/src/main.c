@@ -1,12 +1,15 @@
 #define C_LIB_IMPLEMENTATION
 #include "../../include/c.h"
 
+#include <errno.h>
+#include <limits.h>
 #include <setjmp.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define MAX_F_LEN 1023
 
@@ -74,11 +77,10 @@ static const char *sig_name(int sig) {
 
 static void sig_handler(int s) {
 	error("\033[31mExecution of %s raised \033[33m%s\033[0m\n", _funcname, sig_name(s));
+	fprintf(stderr, "\033[33merrno: \033[31m%s\033[0m\n", strerror(errno));
 	longjmp(_jmp, s ? s : -1);
 }
 
-__attribute__((used))
-__attribute__((constructor)) //
 void sig_init(void) {
 	SIGNALS(SIGNAL_HANDLER_REG)
 }
@@ -114,10 +116,7 @@ void sig_init(void) {
 		exit(1);                                                    \
 	}
 
-int main(void) {
-	/// ╔═══════════════════════════╦═══════════════╦═══════════════════════════╗
-	/// ╠═══════════════════════════╣  array tests  ╠═══════════════════════════╣
-	/// ╚═══════════════════════════╩═══════════════╩═══════════════════════════╝
+void tests_array(void) {
 	array_t arr;
 	TEST("array_create", arr = array_create(int, 25);)
 	ASSERT(arr.allocated == 25 && arr.size == 0 && arr.size_of_type == sizeof(int), "")
@@ -128,17 +127,13 @@ int main(void) {
 	TEST("array_foreach", array_foreach(int, i, arr) printf("%d", *i);)
 
 	TEST("array_foreach", array_foreach(int, i, arr) *i = 47;)
-
 	printf("\n");
 
 	TEST("array_foreach", array_foreach(int, i, arr) printf("%d", *i);)
-
 	printf("\n");
+}
 
-	/// ╔═══════════════════════════╦════════════════╦═══════════════════════════╗
-	/// ╠═══════════════════════════╣  string tests  ╠═══════════════════════════╣
-	/// ╚═══════════════════════════╩════════════════╩═══════════════════════════╝
-
+void tests_strings_1(void) {
 	string s, s1, s2;
 	TEST("str", s = str();)
 	ASSERT(__str_is_small(&s), "")
@@ -148,7 +143,7 @@ int main(void) {
 		const size_t _len  = strlen(_data);
 		size_t		 s_len;
 		TEST("str_cpy_l", str_cpy(&s, _data);)
-		ASSERT(strlen(s._M_small_data) == _len, "strlen: %lu != %lu\n", strlen(s._M_small_data), _len)
+		ASSERT(strlen(s.__small_data) == _len, "strlen: %lu != %lu\n", strlen(s.__small_data), _len)
 
 		TEST("Value: ", printf("%s", str_data(&s)));
 
@@ -169,4 +164,74 @@ int main(void) {
 
 	ASSERT(__str_is_small(&s1), "")
 	ASSERT(!__str_is_small(&s2), "")
+
+	printf("%s\n%s\n", str_data(&s1), str_data(&s2));
+}
+
+void tests_strings_file(void) {
+	extern char *realpath(const char *__name, char *__resolved);
+
+	char filename[1024] = {0}, resolved[1024] = {0}, cwd[1024] = {0};
+	getcwd(cwd, 1024);
+	printf("\033[32mCWD: \033[33m%s\033[0m\n", cwd);
+	for (;;) {
+		printf("\033[32mPlease enter a filename: \033[0m");
+		scanf("%s", filename);
+		if (!realpath(filename, resolved)) {
+			fprintf(stderr, "realpath: '%s' – %s\n", filename, strerror(errno));
+			exit(1);
+		} else break;
+	}
+
+	FILE *f, *out;
+	f = fopen(resolved, "r");
+	if (!f) {
+		perror("");
+		exit(1);
+	}
+
+	out = fopen("out.txt", "w");
+	if (!out) {
+		perror("");
+		exit(1);
+	}
+
+	char   buf[1024];
+	u64	   read = 0;
+	string s	= str();
+	for (;;) {
+		read = fread(buf, 1, 1024, f);
+		strn_cat(&s, buf, read);
+		memset(buf, 0, 1024);
+		if (read < 1024) break;
+	}
+	fclose(f);
+
+	fprintf(out, "%s", str_data(&s));
+	fclose(out);
+}
+
+int main(void) {
+	void (*tests[])(void) = {tests_array, tests_strings_1, tests_strings_file};
+	u64 tests_size		  = sizeof tests / sizeof *tests;
+
+	printf("\033[32mTests:\n"
+		   "    \033[32m0\033[33m all\n"
+		   "    \033[32m1\033[33m arrays\n"
+		   "    \033[32m2\033[33m strings: basic tests\n"
+		   "    \033[32m3\033[33m strings: read/write file\n"
+		   "\033[32mSelect test to run: \033[0m");
+	u64 test = 0;
+	int ret	 = scanf("%lu", &test);
+	if (ret < 1 || ret == EOF || test < 0 || test > tests_size) {
+		fprintf(stderr, "\033[31mInvalid option. Please specify a number between %lu and %lu\033[0m\n",
+			0lu, tests_size);
+		exit(1);
+	}
+
+	sig_init();
+
+	if (!test)
+		for (u64 i = 0; i < tests_size; i++) tests[i]();
+	else tests[test - 1]();
 }
