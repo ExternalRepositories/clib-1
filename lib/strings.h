@@ -1,6 +1,5 @@
 #ifndef C_LIB_STRINGS_H
 /// Header guard will be defined later on in the file
-
 #	include "utils.h"
 
 #	include <assert.h>
@@ -20,17 +19,9 @@ enum {
 #	if defined(LITTLE_ENDIAN)
 	_STR_SMALL_MAX_CAPACITY = _STR_SMALL_RAW_CAPACITY,
 #	elif defined(BIG_ENDIAN)
-	_STR_SMALL_MAX_CAPACITY			 = (_STR_SMALL_RAW_CAPACITY << 1),
-#	endif
-#	if defined(LITTLE_ENDIAN)
-	_STR_SMALL_MAX_CAPACITY_AND_FLAG = _STR_SMALL_MAX_CAPACITY | (1 << 7),
-#	elif defined(BIG_ENDIAN)
-	_STR_SMALL_MAX_CAPACITY_AND_FLAG = _STR_SMALL_MAX_CAPACITY | 1,
+	_STR_SMALL_MAX_CAPACITY = (_STR_SMALL_RAW_CAPACITY << 1),
 #	endif
 };
-
-const u64 _STR_SMALL_CAP_CONST = ~(1lu << 7lu);
-const u64 _STR_LONG_CAP_CONST  = ~(1lu << 63lu);
 
 #	ifndef string
 #		define string string
@@ -224,7 +215,7 @@ static void strn_cat(
 	const char *__data,	 /// The data to be appended
 	u64			__srclen /// The size of the data in elements
 ) {
-	str_alloc(__dest, __srclen);
+	str_alloc(__dest, __srclen + 1); /// + 1 for the null terminator
 	char *__mem_start = str_data(__dest);
 	__mem_start += str_len(__dest);
 
@@ -233,6 +224,8 @@ static void strn_cat(
 	u64 __size = __charcount_to_size(__srclen);
 	if (__str_is_small(__dest)) __dest->__small_capacity -= __size;
 	else __dest->__long_size += __size;
+
+	__mem_start[__srclen] = 0;
 }
 
 /// Compares __str and __data, where the latter is of length __len
@@ -286,12 +279,12 @@ void str_alloc(
 	/// Data stored on the stack, we might have to copy it
 	if (__str_is_small(__str)) {
 		/// We need more memory than the SSO buffer can hold
-		if (__mem_req > __str_small_capacity(__str)) {
+		if (__mem_req > __str_small_capacity(__str) + 1) {
 			u64 __str_size	   = __str_small_size(__str);
 			u64 __new_mem_size = __mem_req + __str_size;
 
-			/// We cannot yet store this in the string because it overlaps with
-			/// the data stored in the SSO buffer
+			/// We cannot yet store this in the string because it would overlap
+			/// with the data stored in the SSO buffer
 			u64	  __heap_capacity = __new_mem_size * _STR_REALLOC_FACTOR;
 			char *__mem			  = malloc(__heap_capacity);
 
@@ -438,23 +431,21 @@ void str_free(string *__str) {
 /// Dummy type that represents no argument
 struct __generic_no_arg { } __generic_no_arg;
 
-#		define _INT_TYPES(F) \
-			F(i8) \
-			F(i16) \
-			F(i32) \
-			F(i64) \
-			F(u8) \
-			F(u16) \
-			F(u32) \
-			F(u64) \
-			F(const i8) \
-			F(const i16) \
-			F(const i32) \
-			F(const i64) \
-			F(const u8) \
-			F(const u16) \
-			F(const u32) \
-			F(const u64) \
+#		define _INT_TYPES_(F, ...) \
+			F(__VA_ARGS__ i8) \
+			F(__VA_ARGS__ i16) \
+			F(__VA_ARGS__ i32) \
+			F(__VA_ARGS__ i64) \
+			F(__VA_ARGS__ u8) \
+			F(__VA_ARGS__ u16) \
+			F(__VA_ARGS__ u32) \
+			F(__VA_ARGS__ u64) \
+
+#		define	_INT_TYPES(F) \
+			_INT_TYPES_(F) \
+			_INT_TYPES_(F, const) \
+			_INT_TYPES_(F, volatile) \
+			_INT_TYPES_(F, const volatile) \
 
 #		define _GENERIC_TYPE_OR_NONE(...) CAR(__VA_ARGS__ __VA_OPT__(, ) __generic_no_arg)
 

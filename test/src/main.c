@@ -28,8 +28,6 @@ __attribute__((format(printf, 1, 2))) void error(const char *fmt, ...) {
 }
 
 #define SIGNALS(F) \
-	F(SIGHUP)      \
-	F(SIGINT)      \
 	F(SIGQUIT)     \
 	F(SIGILL)      \
 	F(SIGTRAP)     \
@@ -106,7 +104,7 @@ void sig_init(void) {
 #define ASSERT(cond, ...)                                                \
 	if (!(cond)) {                                                       \
 		error("Assertion \033[32m%s\033[31m failed\n", STRINGISE(cond)); \
-		printf(__VA_ARGS__);                                             \
+		__VA_OPT__(printf(__VA_ARGS__);)                                 \
 		exit(1);                                                         \
 	}
 
@@ -119,10 +117,10 @@ void sig_init(void) {
 void tests_array(void) {
 	array_t arr;
 	TEST("array_create", arr = array_create(int, 25);)
-	ASSERT(arr.allocated == 25 && arr.size == 0 && arr.size_of_type == sizeof(int), "")
+	ASSERT(arr.allocated == 25 && arr.size == 0 && arr.size_of_type == sizeof(int))
 
 	TEST("array_append", repeat(i, 25) array_append(size_t, &arr, i);)
-	ASSERT(arr.size == 25, "")
+	ASSERT(arr.size == 25)
 
 	TEST("array_foreach", array_foreach(int, i, arr) printf("%d", *i);)
 
@@ -133,10 +131,10 @@ void tests_array(void) {
 	printf("\n");
 }
 
-void tests_strings_1(void) {
+void tests_strings_memory(void) {
 	string s, s1, s2;
 	TEST("str", s = str();)
-	ASSERT(__str_is_small(&s), "")
+	ASSERT(__str_is_small(&s))
 
 	{
 		const char  *_data = "Bla Bla bla\n";
@@ -150,7 +148,7 @@ void tests_strings_1(void) {
 		TEST("str_len", s_len = str_len(&s))
 		ASSERT(s_len == _len, "str_len: %lu != %lu\n", s_len, _len)
 
-		ASSERT(__str_is_small(&s), "")
+		ASSERT(__str_is_small(&s))
 	}
 
 	TEST("str_clear", str_clear(&s))
@@ -162,10 +160,60 @@ void tests_strings_1(void) {
 	TEST("str_from", s1 = str("Short string"))
 	TEST("str_from", s2 = str("Long string Long string Long string Long string Long string Long string Long string"))
 
-	ASSERT(__str_is_small(&s1), "")
-	ASSERT(!__str_is_small(&s2), "")
+	ASSERT(__str_is_small(&s1))
+	ASSERT(!__str_is_small(&s2))
 
 	printf("%s\n%s\n", str_data(&s1), str_data(&s2));
+
+	TEST("str_clear", str_clear(&s1))
+	TEST("str_clear", str_clear(&s2))
+
+	ASSERT(str_len(&s1) == 0)
+	ASSERT(str_len(&s2) == 0)
+	ASSERT(!*str_data(&s1))
+	ASSERT(!*str_data(&s2))
+
+	const char *_2x[3] = {
+		"12345678901234567890123",	 /// 23 chars
+		"123456789012345678901234",	 /// 24 chars
+		"1234567890123456789012345", /// 25 chars
+	};
+
+	string sa[3];
+	string sb[3];
+	string sc[3];
+
+	repeat(i, 3) {
+		sa[i] = str();
+		TEST("str_cpy", str_cpy(sa + i, _2x[i]));
+	}
+	repeat(i, 3) {
+		sb[i] = str();
+		TEST("str_cat", str_cat(sb + i, _2x[i]));
+	}
+
+	repeat(i, 3) sc[i] = str(_2x[i]);
+
+	ASSERT(__str_is_small(sa))
+	ASSERT(__str_is_small(sb))
+	ASSERT(__str_is_small(sc))
+
+	ASSERT(!__str_is_small(sa + 1))
+	ASSERT(!__str_is_small(sb + 1))
+	ASSERT(!__str_is_small(sc + 1))
+
+	ASSERT(!__str_is_small(sa + 2))
+	ASSERT(!__str_is_small(sb + 2))
+	ASSERT(!__str_is_small(sc + 2))
+
+	ASSERT(!str_cmp(sa, sb))
+	ASSERT(!str_cmp(sb, sc))
+
+	ASSERT(!str_cmp(sa + 1, sb + 1))
+	ASSERT(!str_cmp(sb + 1, sc + 1))
+
+	ASSERT(!str_cmp(sa + 2, sb + 2))
+	ASSERT(!str_cmp(sb + 2, sc + 2))
 }
 
 void tests_strings_2(void) {
@@ -175,70 +223,73 @@ void tests_strings_2(void) {
 	}
 	TEST("str_cpy_l", str_cpy(&s2, "abcdefghijklmnopqrstuvwxyz"));
 
-	ASSERT(str_len(&s1) == 26, "")
-	ASSERT(str_len(&s2) == 26, "")
-	ASSERT(!str_cmp(&s1, &s2), "")
+	ASSERT(str_len(&s1) == 26)
+	ASSERT(str_len(&s2) == 26)
+	ASSERT(!str_cmp(&s1, &s2))
 
 	TEST("printf", printf("%s\n%s\n", str_data(&s1), str_data(&s2)));
 
 	u64 size = s1.__long_capacity;
 	TEST("str_clear", str_clear(&s1))
-	ASSERT(!str_len(&s1), "")
-	ASSERT(size == s1.__long_capacity, "")
-	ASSERT(*str_data(&s1) == 0, "")
+	ASSERT(!str_len(&s1))
+	ASSERT(size == s1.__long_capacity)
+	ASSERT(*str_data(&s1) == 0)
 }
 
-void tests_strings_file(void) {
-	extern char *realpath(const char *__name, char *__resolved);
-
-	char filename[1024] = {0}, resolved[1024] = {0}, cwd[1024] = {0};
-	getcwd(cwd, 1024);
-	printf("\033[32mCWD: \033[33m%s\033[0m\n", cwd);
-	for (;;) {
-		printf("\033[32mPlease enter a filename: \033[0m");
-		scanf("%s", filename);
-		if (!realpath(filename, resolved)) {
-			fprintf(stderr, "realpath: '%s' – %s\n", filename, strerror(errno));
-			exit(1);
-		} else break;
-	}
-
-	FILE *f, *out;
-	f = fopen(resolved, "r");
-	if (!f) {
-		perror("");
-		exit(1);
-	}
-
-	out = fopen("out.txt", "w");
-	if (!out) {
-		perror("");
-		exit(1);
-	}
-
-	char   buf[1024];
-	u64	   read = 0;
-	string s	= str();
-	for (;;) {
-		read = fread(buf, 1, 1024, f);
-		str_cat(&s, buf, read);
-		memset(buf, 0, 1024);
-		if (read < 1024) break;
-	}
-	fclose(f);
-
-	fprintf(out, "%s", str_data(&s));
-	fclose(out);
-}
+//void tests_strings_file(void) {
+//	extern char *realpath(const char *__name, char *__resolved);
+//
+//	char filename[1024] = {0}, resolved[1024] = {0}, cwd[1024] = {0};
+//	getcwd(cwd, 1024);
+//	printf("\033[32mCWD: \033[33m%s\033[0m\n", cwd);
+//	for (;;) {
+//		printf("\033[32mPlease enter a filename: \033[0m");
+//		scanf("%s", filename);
+//		if (!realpath(filename, resolved)) {
+//			fprintf(stderr, "realpath: '%s' – %s\n", filename, strerror(errno));
+//			exit(1);
+//		} else break;
+//	}
+//
+//	FILE *f, *out;
+//	f = fopen(resolved, "r");
+//	if (!f) {
+//		perror("");
+//		exit(1);
+//	}
+//
+//	out = fopen("out.txt", "w");
+//	if (!out) {
+//		perror("");
+//		exit(1);
+//	}
+//
+//	char   buf[1024];
+//	u64	   read = 0;
+//	string s	= str();
+//	for (;;) {
+//		read = fread(buf, 1, 1024, f);
+//		TEST("strn_cat", str_cat(&s, buf, read));
+//		memset(buf, 0, 1024);
+//		if (read < 1024) break;
+//	}
+//	fclose(f);
+//
+//	fprintf(out, "%s", str_data(&s));
+//	fclose(out);
+//}
 
 int main(void) {
-	void (*tests[])(void) = {tests_array, tests_strings_1, tests_strings_2, tests_strings_file};
+	void (*tests[])(void) = {tests_array, tests_strings_memory, tests_strings_2};
 	u64 tests_size		  = sizeof tests / sizeof *tests;
+
+	for (u64 i = 0; i < tests_size; i++) tests[i]();
+	exit(0);
 
 	printf("\033[32mTests:\n"
 		   "    \033[32m0\033[33m all\n"
 		   "    \033[32m1\033[33m arrays\n"
-		   "    \033[32m2\033[33m strings: basic tests\n"
+		   "    \033[32m2\033[33m strings: memory\n"
 		   "    \033[32m3\033[33m strings: cat/cpy/clear\n"
 		   "    \033[32m4\033[33m strings: read/write file\n"
 		   "\033[32mSelect test to run: \033[0m");
