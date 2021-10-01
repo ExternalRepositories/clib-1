@@ -4,6 +4,7 @@
 /// TODO: Test with C90, C99
 /// TODO: Test with a c++ compiler
 /// TODO: Test on Windows
+/// TODO: Test on a big-endian machine
 
 #	ifdef __cplusplus
 extern "C" {
