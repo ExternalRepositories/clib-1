@@ -216,6 +216,91 @@ void tests_strings_memory(void) {
 	ASSERT(!str_cmp(sb + 2, sc + 2))
 }
 
+void tests_wstrings_memory(void) {
+	wstring s, s1, s2;
+	TEST("str", s = wstr();)
+	ASSERT(__wstr_is_small(&s))
+
+	{
+		const wchar *_data = L"Bla\n";
+		const size_t _len  = wcslen(_data);
+		size_t		 s_len;
+		TEST("str_cpy_l", wstr_cpy(&s, _data);)
+		ASSERT(wcslen(s.__small_data) == _len, "wcslen: %lu != %lu\n", wcslen(s.__small_data), _len)
+
+		TEST("Value: ", printf("%ls", wstr_data(&s)));
+
+		TEST("wstr_len", s_len = wstr_len(&s))
+		ASSERT(s_len == _len, "wstr_len: %lu != %lu\n", s_len, _len)
+
+		ASSERT(__wstr_is_small(&s))
+	}
+
+	TEST("str_clear", wstr_clear(&s))
+	else s = wstr();
+	ASSERT(wstr_len(&s) == 0, "wstr_len not 0 after call to str_clear")
+
+	TEST("printf(wstr_data(&s)) ", printf("%ls", wstr_data(&s));)
+
+	TEST("str_from", s1 = wstr(L"Short"))
+	TEST("str_from", s2 = wstr(L"Long string Long string Long string Long string Long string Long string Long string"))
+
+	ASSERT(__wstr_is_small(&s1))
+	ASSERT(!__wstr_is_small(&s2))
+
+	printf("%ls\n%ls\n", wstr_data(&s1), wstr_data(&s2));
+
+	TEST("str_clear", wstr_clear(&s1))
+	TEST("str_clear", wstr_clear(&s2))
+
+	ASSERT(wstr_len(&s1) == 0)
+	ASSERT(wstr_len(&s2) == 0)
+	ASSERT(!*wstr_data(&s1))
+	ASSERT(!*wstr_data(&s2))
+
+	const wchar *_2x[3] = {
+		L"12345",	/// 5 chars
+		L"123456",	/// 6 chars
+		L"1234567", /// 7 chars
+	};
+
+	wstring sa[3];
+	wstring sb[3];
+	wstring sc[3];
+
+	repeat(i, 3) {
+		sa[i] = wstr();
+		TEST("wstr_cpy", wstr_cpy(sa + i, _2x[i]));
+	}
+	repeat(i, 3) {
+		sb[i] = wstr();
+		TEST("wstr_cat", wstr_cat(sb + i, _2x[i]));
+	}
+
+	repeat(i, 3) sc[i] = wstr(_2x[i]);
+
+	ASSERT(__wstr_is_small(sa))
+	ASSERT(__wstr_is_small(sb))
+	ASSERT(__wstr_is_small(sc))
+
+	ASSERT(!__wstr_is_small(sa + 1))
+	ASSERT(!__wstr_is_small(sb + 1))
+	ASSERT(!__wstr_is_small(sc + 1))
+
+	ASSERT(!__wstr_is_small(sa + 2))
+	ASSERT(!__wstr_is_small(sb + 2))
+	ASSERT(!__wstr_is_small(sc + 2))
+
+	ASSERT(!wstr_cmp(sa, sb))
+	ASSERT(!wstr_cmp(sb, sc))
+
+	ASSERT(!wstr_cmp(sa + 1, sb + 1))
+	ASSERT(!wstr_cmp(sb + 1, sc + 1))
+
+	ASSERT(!wstr_cmp(sa + 2, sb + 2))
+	ASSERT(!wstr_cmp(sb + 2, sc + 2))
+}
+
 void tests_strings_2(void) {
 	string s1 = str(), s2 = str();
 	for (char c = 'a'; c <= 'z'; c++) {
@@ -236,7 +321,27 @@ void tests_strings_2(void) {
 	ASSERT(*str_data(&s1) == 0)
 }
 
-//void tests_strings_file(void) {
+void tests_wstrings_2(void) {
+	wstring s1 = wstr(), s2 = wstr();
+	for (wchar c = L'a'; c <= L'z'; c++) {
+		TEST("strn_cat", wstr_cat(&s1, &c, 1))
+	}
+	TEST("str_cpy_l", wstr_cpy(&s2, L"abcdefghijklmnopqrstuvwxyz"));
+
+	ASSERT(wstr_len(&s1) == 26)
+	ASSERT(wstr_len(&s2) == 26)
+	ASSERT(!wstr_cmp(&s1, &s2))
+
+	TEST("printf", printf("%ls\n%ls\n", wstr_data(&s1), wstr_data(&s2)));
+
+	u64 size = s1.__long_capacity;
+	TEST("str_clear", wstr_clear(&s1))
+	ASSERT(!wstr_len(&s1))
+	ASSERT(size == s1.__long_capacity)
+	ASSERT(*wstr_data(&s1) == 0)
+}
+
+// void tests_strings_file(void) {
 //	extern char *realpath(const char *__name, char *__resolved);
 //
 //	char filename[1024] = {0}, resolved[1024] = {0}, cwd[1024] = {0};
@@ -277,10 +382,10 @@ void tests_strings_2(void) {
 //
 //	fprintf(out, "%s", str_data(&s));
 //	fclose(out);
-//}
+// }
 
 int main(void) {
-	void (*tests[])(void) = {tests_array, tests_strings_memory, tests_strings_2};
+	void (*tests[])(void) = {tests_array, tests_strings_memory, tests_strings_2, tests_wstrings_memory, tests_wstrings_2};
 	u64 tests_size		  = sizeof tests / sizeof *tests;
 
 	for (u64 i = 0; i < tests_size; i++) tests[i]();

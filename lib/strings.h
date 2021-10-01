@@ -8,6 +8,14 @@
 #	include <stdio.h>
 #	include <endian.h>
 
+#	if defined(__BYTE_ORDER)
+#		if __BYTE_ORDER == __LITTLE_ENDIAN && !defined(LITTLE_ENDIAN)
+#			define LITTLE_ENDIAN
+#		elif __BYTE_ORDER == __BIG_ENDIAN && !defined(BIG_ENDIAN)
+#			define BIG_ENDIAN
+#		endif
+#	endif
+
 #	if !defined(BIG_ENDIAN) && !defined(LITTLE_ENDIAN) || defined(BIG_ENDIAN) && defined(LITTLE_ENDIAN)
 #		error "Please define either BIG_ENDIAN or LITTLE_ENDIAN before including this header."
 #		include "/Abort Compilation: See Error Above"
@@ -15,11 +23,11 @@
 
 /// In practice, these are gonna be 23 and 46
 enum {
-	_STR_SMALL_RAW_CAPACITY = (sizeof(char *) + sizeof(u64) * 2 - 1),
+	__STR_SMALL_RAW_CAPACITY = (sizeof(char *) + sizeof(u64) * 2 - 1),
 #	if defined(LITTLE_ENDIAN)
-	_STR_SMALL_MAX_CAPACITY = _STR_SMALL_RAW_CAPACITY,
+	__STR_SMALL_MAX_CAPACITY = __STR_SMALL_RAW_CAPACITY,
 #	elif defined(BIG_ENDIAN)
-	_STR_SMALL_MAX_CAPACITY = (_STR_SMALL_RAW_CAPACITY << 1),
+	__STR_SMALL_MAX_CAPACITY = (__STR_SMALL_RAW_CAPACITY << 1),
 #	endif
 };
 
@@ -28,10 +36,10 @@ enum {
 #	endif
 
 typedef union __string_u {
-	char __raw[_STR_SMALL_RAW_CAPACITY + 1];
+	char __raw[__STR_SMALL_RAW_CAPACITY + 1];
 
 	struct {
-		char __small_data[_STR_SMALL_RAW_CAPACITY];
+		char __small_data[__STR_SMALL_RAW_CAPACITY];
 
 		/// On a little-endian machine, (__small_capacity & _STR_SMALL_CAP_CONST) contains the
 		/// free capacity of the string. Its MSB shall be unset if the string
@@ -65,11 +73,11 @@ typedef union __string_u {
 } string;
 
 typedef struct __string_view_s {
-	const char *const data;
-	const u64		  size;
+	const char *const __data;
+	const u64		  __size;
 } string_view_t;
 
-static_assert(sizeof(union __string_u) == _STR_SMALL_RAW_CAPACITY + 1, "union __string_u must be 24 bytes long");
+static_assert(sizeof(union __string_u) == __STR_SMALL_RAW_CAPACITY + 1, "union __string_u must be 24 bytes long");
 
 /// Create and return a new empty string with a length of STRINGDEF_MIN_SIZE
 string str_create();
@@ -95,13 +103,15 @@ u64 str_cat(string *__dest, const string *__what);
 int str_cmp(const string *__dest, const string *__other);
 /// Copy __src to __dest
 void str_cpy(string *__dest, const string *__src);
+/// Copy __len chars from __literal to __dest
+void strn_cpy(string *__dest, const char *__literal, u64 __len);
 /// Reverse __str
 string *str_rev(string *__str);
 
 /// Calculate and return the length of __str (O(1))
 u64 str_len(const string *__str);
 /// Get a pointer to the contents of the string
-static char *str_data(string *__str);
+char *str_data(string *__str);
 
 /// Remove all data from __str
 void str_clear(string *__str);
@@ -117,6 +127,15 @@ void str_free(string *__string);
 #	include <stdlib.h>
 #	include <string.h>
 #	include <unistd.h>
+#	include <endian.h>
+
+#	if defined(__BYTE_ORDER)
+#		if __BYTE_ORDER == __LITTLE_ENDIAN && !defined(LITTLE_ENDIAN)
+#			define LITTLE_ENDIAN
+#		elif __BYTE_ORDER == __BIG_ENDIAN && !defined(BIG_ENDIAN)
+#			define BIG_ENDIAN
+#		endif
+#	endif
 
 #	if !defined(BIG_ENDIAN) && !defined(LITTLE_ENDIAN) || defined(BIG_ENDIAN) && defined(LITTLE_ENDIAN)
 #		error "Please define either BIG_ENDIAN or LITTLE_ENDIAN before including this header."
@@ -145,9 +164,9 @@ enum {
 /// Check if a string is a small string
 static u1 __str_is_small(const string *__str) {
 #	if defined(LITTLE_ENDIAN)
-	return !(__str->__raw[_STR_SMALL_RAW_CAPACITY] & (1 << 7));
+	return !(__str->__raw[__STR_SMALL_RAW_CAPACITY] & (1 << 7));
 #	elif defined(BIG_ENDIAN)
-	return !(__str->__raw[_STR_SMALL_RAW_CAPACITY] & 1);
+	return !(__str->__raw[__STR_SMALL_RAW_CAPACITY] & 1);
 #	endif
 }
 
@@ -157,17 +176,17 @@ static u1 __str_is_small(const string *__str) {
 
 void __str_setflag_long(string *__str) {
 #	if defined(LITTLE_ENDIAN)
-	__str->__raw[_STR_SMALL_RAW_CAPACITY] |= (1 << 7);
+	__str->__raw[__STR_SMALL_RAW_CAPACITY] |= (1 << 7);
 #	elif defined(BIG_ENDIAN)
-	__str->__raw[_STR_SMALL_RAW_CAPACITY] |= 1;
+	__str->__raw[__STR_SMALL_RAW_CAPACITY] |= 1;
 #	endif
 }
 
 void __str_setflag_small(string *__str) {
 #	if defined(LITTLE_ENDIAN)
-	__str->__raw[_STR_SMALL_RAW_CAPACITY] &= ~(1 << 7);
+	__str->__raw[__STR_SMALL_RAW_CAPACITY] &= ~(1 << 7);
 #	elif defined(BIG_ENDIAN)
-	__str->__raw[_STR_SMALL_RAW_CAPACITY] &= ~1;
+	__str->__raw[__STR_SMALL_RAW_CAPACITY] &= ~1;
 #	endif
 }
 
@@ -181,7 +200,7 @@ static u64 __str_small_capacity(const string *__str) {
 
 /// Get the small size of __str
 static u8 __str_small_size(const string *__str) {
-	return _STR_SMALL_RAW_CAPACITY - __str_small_capacity(__str);
+	return __STR_SMALL_RAW_CAPACITY - __str_small_capacity(__str);
 }
 
 /// Get the small size of __str
@@ -265,7 +284,7 @@ static char *__string_rev_impl(
 /// Create and return a new empty string
 string str_create() {
 	string __str		   = {0};
-	__str.__small_capacity = _STR_SMALL_MAX_CAPACITY;
+	__str.__small_capacity = __STR_SMALL_MAX_CAPACITY;
 	__str_setflag_small(&__str);
 	return __str;
 }
@@ -379,6 +398,11 @@ void str_cpy(string *__dest, const string *__src) {
 	str_cat(__dest, __src);
 }
 
+void strn_cpy(string *__dest, const char *__literal, u64 __len) {
+	str_clear(__dest);
+	strn_cat(__dest, __literal, __len);
+}
+
 string *str_rev(string *__str) {
 	__string_rev_impl(str_data(__str), str_len(__str));
 	return __str;
@@ -406,7 +430,7 @@ void str_clear(string *__str) {
 	if (!*__str_data) return;
 
 	if (__str_is_small(__str)) {
-		__str->__small_capacity = _STR_SMALL_MAX_CAPACITY;
+		__str->__small_capacity = __STR_SMALL_MAX_CAPACITY;
 		__str_setflag_small(__str);
 	} else {
 		__str->__long_size = 0;
@@ -427,28 +451,6 @@ void str_free(string *__str) {
 #	if __STDC_VERSION__ >= 201112L /// 201112L == C11
 ///  '// clang-format off' doesn't work with '///'!
 // clang-format off
-
-/// Dummy type that represents no argument
-struct __generic_no_arg { } __generic_no_arg;
-
-#		define _INT_TYPES_(F, ...) \
-			F(__VA_ARGS__ i8) \
-			F(__VA_ARGS__ i16) \
-			F(__VA_ARGS__ i32) \
-			F(__VA_ARGS__ i64) \
-			F(__VA_ARGS__ u8) \
-			F(__VA_ARGS__ u16) \
-			F(__VA_ARGS__ u32) \
-			F(__VA_ARGS__ u64) \
-
-#		define	_INT_TYPES(F) \
-			_INT_TYPES_(F) \
-			_INT_TYPES_(F, const) \
-			_INT_TYPES_(F, volatile) \
-			_INT_TYPES_(F, const volatile) \
-
-#		define _GENERIC_TYPE_OR_NONE(...) CAR(__VA_ARGS__ __VA_OPT__(, ) __generic_no_arg)
-
 #		define str(...) _Generic((_GENERIC_TYPE_OR_NONE(__VA_ARGS__)),	\
 				string * : str_dup,							\
 				char *     : str_from,                                         \
@@ -462,11 +464,15 @@ struct __generic_no_arg { } __generic_no_arg;
 				char *     : strlen                 \
 			)(__string_like)
 
-#		define str_cpy(__string, __string_like) _Generic((__string_like),	\
+#		define __str_cpy_wrapper_F(_type) _type : strn_cpy,
+#		define str_cpy_wrapper(...) _Generic((__VA_ARGS__), \
+				_INT_TYPES(__str_cpy_wrapper_F)                                \
+				struct __generic_no_arg : str_cpy_l)
+#		define str_cpy(__string, __string_like, ...) _Generic((__string_like),	\
 				string * : str_cpy, 	                \
-				const char *     : str_cpy_l,                                            \
-				char *     : str_cpy_l                                            \
-			)(__string, __string_like)
+				const char *     : str_cpy_wrapper(_GENERIC_TYPE_OR_NONE(__VA_ARGS__)),                                            \
+				char *     : str_cpy_wrapper(_GENERIC_TYPE_OR_NONE(__VA_ARGS__))                                            \
+			)(__string, __string_like __VA_OPT__(,) __VA_ARGS__)
 
 #		define __str_cat_l_wrapper_F(_type) _type : strn_cat,
 #		define str_cat_l_wrapper(...) _Generic((__VA_ARGS__), \
@@ -484,10 +490,18 @@ struct __generic_no_arg { } __generic_no_arg;
 				char *     : str_cmp_l 				\
 			)(__string, __string_like)
 
-#		define str_rev(__string_like) _Generistruct __generic_no_arg c((__string_like), \
+#		define str_rev(__string_like) _Generic((__string_like), \
 				string* : str_rev									\
 				char *    : str_rev_l 								\
 			)(__string_like)
 // clang-format on
+#	endif
+
+#	ifndef C_LIB_STRINGS_NO_SHORTHANDS
+#		define sdata  str_data
+#		define slen	  str_len
+#		define scpy	  str_cpy
+#		define scat	  str_cat
+#		define sclear str_clear
 #	endif
 #endif
