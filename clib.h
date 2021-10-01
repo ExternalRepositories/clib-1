@@ -5,6 +5,8 @@
 /// TODO: Test with a c++ compiler
 /// TODO: Test on Windows
 /// TODO: Test on a big-endian machine
+/// TODO: Better commenting and structuring
+/// TODO: _Generic’s for lists and arrays
 
 #	ifdef __cplusplus
 extern "C" {
