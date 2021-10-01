@@ -1,2 +1,5 @@
 test/test
 initproj/initproj
+
+# Dummy Makefile that does nothing
+Makefile
