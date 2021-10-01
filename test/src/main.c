@@ -1,15 +1,12 @@
-#define C_LIB_IMPLEMENTATION
-#include "../../include/c.h"
-
+#define CLIB_IMPLEMENTATION
+#include <clib.h>
 #include <errno.h>
-#include <limits.h>
 #include <setjmp.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #define MAX_F_LEN 1023
 
@@ -134,21 +131,21 @@ void tests_array(void) {
 void tests_strings_memory(void) {
 	string s, s1, s2;
 	TEST("str", s = str();)
-	ASSERT(__str_is_small(&s))
+	ASSERT(_str_is_small(&s))
 
 	{
 		const char  *_data = "Bla Bla bla\n";
 		const size_t _len  = strlen(_data);
 		size_t		 s_len;
 		TEST("str_cpy_l", str_cpy(&s, _data);)
-		ASSERT(strlen(s.__small_data) == _len, "strlen: %lu != %lu\n", strlen(s.__small_data), _len)
+		ASSERT(strlen(s._small_data) == _len, "strlen: %lu != %lu\n", strlen(s._small_data), _len)
 
 		TEST("Value: ", printf("%s", str_data(&s)));
 
 		TEST("str_len", s_len = str_len(&s))
 		ASSERT(s_len == _len, "str_len: %lu != %lu\n", s_len, _len)
 
-		ASSERT(__str_is_small(&s))
+		ASSERT(_str_is_small(&s))
 	}
 
 	TEST("str_clear", str_clear(&s))
@@ -160,8 +157,8 @@ void tests_strings_memory(void) {
 	TEST("str_from", s1 = str("Short string"))
 	TEST("str_from", s2 = str("Long string Long string Long string Long string Long string Long string Long string"))
 
-	ASSERT(__str_is_small(&s1))
-	ASSERT(!__str_is_small(&s2))
+	ASSERT(_str_is_small(&s1))
+	ASSERT(!_str_is_small(&s2))
 
 	printf("%s\n%s\n", str_data(&s1), str_data(&s2));
 
@@ -194,17 +191,17 @@ void tests_strings_memory(void) {
 
 	repeat(i, 3) sc[i] = str(_2x[i]);
 
-	ASSERT(__str_is_small(sa))
-	ASSERT(__str_is_small(sb))
-	ASSERT(__str_is_small(sc))
+	ASSERT(_str_is_small(sa))
+	ASSERT(_str_is_small(sb))
+	ASSERT(_str_is_small(sc))
 
-	ASSERT(!__str_is_small(sa + 1))
-	ASSERT(!__str_is_small(sb + 1))
-	ASSERT(!__str_is_small(sc + 1))
+	ASSERT(!_str_is_small(sa + 1))
+	ASSERT(!_str_is_small(sb + 1))
+	ASSERT(!_str_is_small(sc + 1))
 
-	ASSERT(!__str_is_small(sa + 2))
-	ASSERT(!__str_is_small(sb + 2))
-	ASSERT(!__str_is_small(sc + 2))
+	ASSERT(!_str_is_small(sa + 2))
+	ASSERT(!_str_is_small(sb + 2))
+	ASSERT(!_str_is_small(sc + 2))
 
 	ASSERT(!str_cmp(sa, sb))
 	ASSERT(!str_cmp(sb, sc))
@@ -219,21 +216,21 @@ void tests_strings_memory(void) {
 void tests_wstrings_memory(void) {
 	wstring s, s1, s2;
 	TEST("str", s = wstr();)
-	ASSERT(__wstr_is_small(&s))
+	ASSERT(_wstr_is_small(&s))
 
 	{
 		const wchar *_data = L"Bla\n";
 		const size_t _len  = wcslen(_data);
 		size_t		 s_len;
 		TEST("str_cpy_l", wstr_cpy(&s, _data);)
-		ASSERT(wcslen(s.__small_data) == _len, "wcslen: %lu != %lu\n", wcslen(s.__small_data), _len)
+		ASSERT(wcslen(s._small_data) == _len, "wcslen: %lu != %lu\n", wcslen(s._small_data), _len)
 
 		TEST("Value: ", printf("%ls", wstr_data(&s)));
 
 		TEST("wstr_len", s_len = wstr_len(&s))
 		ASSERT(s_len == _len, "wstr_len: %lu != %lu\n", s_len, _len)
 
-		ASSERT(__wstr_is_small(&s))
+		ASSERT(_wstr_is_small(&s))
 	}
 
 	TEST("str_clear", wstr_clear(&s))
@@ -245,8 +242,8 @@ void tests_wstrings_memory(void) {
 	TEST("str_from", s1 = wstr(L"Short"))
 	TEST("str_from", s2 = wstr(L"Long string Long string Long string Long string Long string Long string Long string"))
 
-	ASSERT(__wstr_is_small(&s1))
-	ASSERT(!__wstr_is_small(&s2))
+	ASSERT(_wstr_is_small(&s1))
+	ASSERT(!_wstr_is_small(&s2))
 
 	printf("%ls\n%ls\n", wstr_data(&s1), wstr_data(&s2));
 
@@ -279,17 +276,17 @@ void tests_wstrings_memory(void) {
 
 	repeat(i, 3) sc[i] = wstr(_2x[i]);
 
-	ASSERT(__wstr_is_small(sa))
-	ASSERT(__wstr_is_small(sb))
-	ASSERT(__wstr_is_small(sc))
+	ASSERT(_wstr_is_small(sa))
+	ASSERT(_wstr_is_small(sb))
+	ASSERT(_wstr_is_small(sc))
 
-	ASSERT(!__wstr_is_small(sa + 1))
-	ASSERT(!__wstr_is_small(sb + 1))
-	ASSERT(!__wstr_is_small(sc + 1))
+	ASSERT(!_wstr_is_small(sa + 1))
+	ASSERT(!_wstr_is_small(sb + 1))
+	ASSERT(!_wstr_is_small(sc + 1))
 
-	ASSERT(!__wstr_is_small(sa + 2))
-	ASSERT(!__wstr_is_small(sb + 2))
-	ASSERT(!__wstr_is_small(sc + 2))
+	ASSERT(!_wstr_is_small(sa + 2))
+	ASSERT(!_wstr_is_small(sb + 2))
+	ASSERT(!_wstr_is_small(sc + 2))
 
 	ASSERT(!wstr_cmp(sa, sb))
 	ASSERT(!wstr_cmp(sb, sc))
@@ -314,10 +311,10 @@ void tests_strings_2(void) {
 
 	TEST("printf", printf("%s\n%s\n", str_data(&s1), str_data(&s2)));
 
-	u64 size = s1.__long_capacity;
+	u64 size = s1._long_capacity;
 	TEST("str_clear", str_clear(&s1))
 	ASSERT(!str_len(&s1))
-	ASSERT(size == s1.__long_capacity)
+	ASSERT(size == s1._long_capacity)
 	ASSERT(*str_data(&s1) == 0)
 }
 
@@ -334,10 +331,10 @@ void tests_wstrings_2(void) {
 
 	TEST("printf", printf("%ls\n%ls\n", wstr_data(&s1), wstr_data(&s2)));
 
-	u64 size = s1.__long_capacity;
+	u64 size = s1._long_capacity;
 	TEST("str_clear", wstr_clear(&s1))
 	ASSERT(!wstr_len(&s1))
-	ASSERT(size == s1.__long_capacity)
+	ASSERT(size == s1._long_capacity)
 	ASSERT(*wstr_data(&s1) == 0)
 }
 
@@ -386,29 +383,5 @@ void tests_wstrings_2(void) {
 
 int main(void) {
 	void (*tests[])(void) = {tests_array, tests_strings_memory, tests_strings_2, tests_wstrings_memory, tests_wstrings_2};
-	u64 tests_size		  = sizeof tests / sizeof *tests;
-
-	for (u64 i = 0; i < tests_size; i++) tests[i]();
-	exit(0);
-
-	printf("\033[32mTests:\n"
-		   "    \033[32m0\033[33m all\n"
-		   "    \033[32m1\033[33m arrays\n"
-		   "    \033[32m2\033[33m strings: memory\n"
-		   "    \033[32m3\033[33m strings: cat/cpy/clear\n"
-		   "    \033[32m4\033[33m strings: read/write file\n"
-		   "\033[32mSelect test to run: \033[0m");
-	u64 test = 0;
-	int ret	 = scanf("%lu", &test);
-	if (ret < 1 || ret == EOF || test < 0 || test > tests_size) {
-		fprintf(stderr, "\033[31mInvalid option. Please specify a number between %lu and %lu\033[0m\n",
-			0lu, tests_size);
-		exit(1);
-	}
-
-	sig_init();
-
-	if (!test)
-		for (u64 i = 0; i < tests_size; i++) tests[i]();
-	else tests[test - 1]();
+	repeat(i, arrsize(tests)) tests[i]();
 }

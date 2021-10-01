@@ -1,8 +1,8 @@
 OUT = test
 SRC = $(wildcard src/*.c)
-HEADERS = $(wildcard src/*.h ../lib/*.h)
+HEADERS = $(wildcard src/*.h) ../clib.h
 
-CFLAGS = -Wall -Wextra -Wundef -Werror=return-type -march=native -std=c17 -Wno-unused-function -DLITTLE_ENDIAN
+CFLAGS = -Wall -Wextra -Wundef -Werror=return-type -march=native -std=c17 -Wno-unused-function
 
 .PHONY: all clean debug install
 
@@ -13,9 +13,6 @@ $(OUT): $(SRC) $(HEADERS) Makefile
 
 debug: $(SRC) $(HEADERS) Makefile
 	$(CC) $(CFLAGS) $(SRC) -o $(OUT) $(LFLAGS) -O0 -ggdb
-
-install: $(OUT)
-	cp $(OUT) /bin/$(OUT)
 
 clean:
 	rm -rf $(OUT)
