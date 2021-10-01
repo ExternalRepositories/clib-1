@@ -1,5 +1,5 @@
 #ifndef CLIB
-/// Header guard will be defined later on in the file
+/// Header guard will be #define’d later on in the file
 
 /// TODO: Test with C90, C99
 /// TODO: Test with a c++ compiler
