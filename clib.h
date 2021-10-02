@@ -49,8 +49,12 @@ extern "C" {
 #	define repeat(_var_name, _until)	   for (size_t _var_name = 0, _until_val = _until; _var_name < _until_val; _var_name++)
 #	define arrsize(_array)				   (sizeof _array / sizeof *_array)
 
-#	define MAX(X, Y) (X > Y ? X : Y)
-#	define MIN(X, Y) (X < Y ? X : Y)
+/* clang-format off */
+#	define MAX(X, Y)			(X > Y ? X : Y)
+#	define MIN(X, Y)			(X < Y ? X : Y)
+#	define BETWEEN(X, _lo, _hi)	((X >= _lo) && (X <= _hi))
+#	define CLAMP(X, _lo, _hi)	(X < _lo ? _lo : X > _hi ? _hi : X)
+/* clang-format on */
 
 #	define CLIB_INT_TYPES_(F, ...) \
 		F(__VA_ARGS__ i8)           \
