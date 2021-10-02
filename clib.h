@@ -40,6 +40,9 @@ extern "C" {
 #		define wstring wstring
 #	endif
 
+#define CLIB_EMPTY_STRING _clib_empty_string
+#define CLIB_EMPTY_WSTRING _clib_empty_wstring
+
 #	define CLIB_CAR(X, ...)			   X
 #	define CLIB_GENERIC_TYPE_OR_NONE(...) CLIB_CAR(__VA_ARGS__ __VA_OPT__(, ) clib_generic_no_arg)
 #	define repeat(_var_name, _until)	   for (size_t _var_name = 0, _until_val = _until; _var_name < _until_val; _var_name++)
@@ -246,6 +249,8 @@ static_assert(sizeof(union _string_u) == CLIB_STR_SMALL_RAW_CAPACITY + 1, "union
 static_assert(sizeof(union _wstring_u) == CLIB_WSTR_SMALL_RAW_CAPACITY * sizeof(wchar) + sizeof(wchar), "union _wstring_u must be 24 bytes long");
 
 extern struct clib_generic_no_arg clib_generic_no_arg;
+extern union _string_u _clib_empty_string;
+extern union _wstring_u _clib_empty_wstring;
 
 u64	 min(u64 _a, u64 _b);
 u64	 max(u64 _a, u64 _b);
@@ -429,6 +434,8 @@ enum {
 };
 
 struct clib_generic_no_arg clib_generic_no_arg;
+union _string_u _clib_empty_string = {0};
+union _wstring_u _clib_empty_wstring = {0};
 
 u64 min(u64 _a, u64 _b) {
 	return _a < _b ? _a : _b;
