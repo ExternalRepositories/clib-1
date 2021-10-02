@@ -249,8 +249,8 @@ static_assert(sizeof(union _string_u) == CLIB_STR_SMALL_RAW_CAPACITY + 1, "union
 static_assert(sizeof(union _wstring_u) == CLIB_WSTR_SMALL_RAW_CAPACITY * sizeof(wchar) + sizeof(wchar), "union _wstring_u must be 24 bytes long");
 
 extern struct clib_generic_no_arg clib_generic_no_arg;
-extern union _string_u _clib_empty_string;
-extern union _wstring_u _clib_empty_wstring;
+extern const union _string_u _clib_empty_string;
+extern const union _wstring_u _clib_empty_wstring;
 
 u64	 min(u64 _a, u64 _b);
 u64	 max(u64 _a, u64 _b);
@@ -434,8 +434,8 @@ enum {
 };
 
 struct clib_generic_no_arg clib_generic_no_arg;
-union _string_u _clib_empty_string = {0};
-union _wstring_u _clib_empty_wstring = {0};
+const union _string_u _clib_empty_string = {0};
+const union _wstring_u _clib_empty_wstring = {0};
 
 u64 min(u64 _a, u64 _b) {
 	return _a < _b ? _a : _b;
