@@ -105,6 +105,12 @@ typedef i32 wchar;
 typedef float  f32;
 typedef double f64;
 
+/// These are too big for an enum if the machine is little-endian
+#	if defined(LITTLE_ENDIAN)
+#		define CLIB_WSTR_LONG_FLAG (1lu << 63lu)
+#		define CLIB_STR_LONG_FLAG	(1lu << 63lu)
+#	endif
+
 /// In practice, these are gonna be 23 and 46 (string), or 5 and 10 (wstring)
 enum {
 	CLIB_WSTR_SMALL_RAW_CAPACITY = ((sizeof(wchar *) + sizeof(u64) * 2) / sizeof(wchar) - 1),
@@ -112,14 +118,20 @@ enum {
 
 #	if defined(LITTLE_ENDIAN)
 	CLIB_WSTR_SMALL_MAX_CAPACITY = CLIB_WSTR_SMALL_RAW_CAPACITY,
+	CLIB_WSTR_SMALL_FLAG		 = (1 << (sizeof(wchar) * 8 - 1)),
 #	elif defined(BIG_ENDIAN)
 	CLIB_WSTR_SMALL_MAX_CAPACITY = (CLIB_WSTR_SMALL_RAW_CAPACITY << 1),
+	CLIB_WSTR_SMALL_FLAG		 = 1,
+	CLIB_WSTR_LONG_FLAG			 = 1,
 #	endif
 
 #	if defined(LITTLE_ENDIAN)
 	CLIB_STR_SMALL_MAX_CAPACITY = CLIB_STR_SMALL_RAW_CAPACITY,
+	CLIB_STR_SMALL_FLAG			= (1 << 7),
 #	elif defined(BIG_ENDIAN)
 	CLIB_STR_SMALL_MAX_CAPACITY	 = (CLIB_STR_SMALL_RAW_CAPACITY << 1),
+	CLIB_STR_SMALL_FLAG			 = 1,
+	CLIB_STR_LONG_FLAG			 = 1,
 #	endif
 };
 
