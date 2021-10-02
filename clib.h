@@ -382,7 +382,6 @@ void	array_free(array_t *array, void (*callback)(void *));
 #	endif
 
 #endif /*CLIB*/
-#define CLIB_IMPLEMENTATION
 #ifdef CLIB_IMPLEMENTATION
 
 #	ifdef __cplusplus
