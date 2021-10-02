@@ -40,10 +40,11 @@ extern "C" {
 #		define wstring wstring
 #	endif
 
-#define CLIB_EMPTY_STRING _clib_empty_string
-#define CLIB_EMPTY_WSTRING _clib_empty_wstring
+#	define CLIB_EMPTY_STRING  _clib_empty_string
+#	define CLIB_EMPTY_WSTRING _clib_empty_wstring
 
 #	define CLIB_CAR(X, ...)			   X
+#	define CLIB_CDR(X, ...)			   __VA_ARGS__
 #	define CLIB_GENERIC_TYPE_OR_NONE(...) CLIB_CAR(__VA_ARGS__ __VA_OPT__(, ) clib_generic_no_arg)
 #	define repeat(_var_name, _until)	   for (size_t _var_name = 0, _until_val = _until; _var_name < _until_val; _var_name++)
 #	define arrsize(_array)				   (sizeof _array / sizeof *_array)
@@ -249,8 +250,8 @@ static_assert(sizeof(union _string_u) == CLIB_STR_SMALL_RAW_CAPACITY + 1, "union
 static_assert(sizeof(union _wstring_u) == CLIB_WSTR_SMALL_RAW_CAPACITY * sizeof(wchar) + sizeof(wchar), "union _wstring_u must be 24 bytes long");
 
 extern struct clib_generic_no_arg clib_generic_no_arg;
-extern const union _string_u _clib_empty_string;
-extern const union _wstring_u _clib_empty_wstring;
+extern const union _string_u	  _clib_empty_string;
+extern const union _wstring_u	  _clib_empty_wstring;
 
 u64	 min(u64 _a, u64 _b);
 u64	 max(u64 _a, u64 _b);
@@ -263,6 +264,8 @@ string str_create();
 void str_alloc(string *_str, u64 _mem_req);
 /// Create and return a new string containing _data, which is copied
 string str_from(const char *_data);
+/// Create and return a new string containing _char_count elements starting at _data, which is copied
+string strn_from(const char *_data, u64 _char_count);
 /// Create a copy of _str
 string str_dup(const string *_str);
 
@@ -314,6 +317,8 @@ wstring wstr_create();
 void wstr_alloc(wstring *_wstr, u64 _chars_req);
 /// Create and return a new wstring containing _data, which is copied
 wstring wstr_from(const wchar *_data);
+/// Create and return a new wstring containing _char_count elements starting at _data, which is copied
+wstring wstrn_from(const wchar *_data, u64 _char_count);
 /// Create a copy of _wstr
 wstring wstr_dup(const wstring *_wstr);
 /// Map the contents of _file into memory and return it as a wstring
@@ -377,7 +382,7 @@ void	array_free(array_t *array, void (*callback)(void *));
 #	endif
 
 #endif /*CLIB*/
-
+#define CLIB_IMPLEMENTATION
 #ifdef CLIB_IMPLEMENTATION
 
 #	ifdef __cplusplus
@@ -434,8 +439,8 @@ enum {
 };
 
 struct clib_generic_no_arg clib_generic_no_arg;
-const union _string_u _clib_empty_string = {0};
-const union _wstring_u _clib_empty_wstring = {0};
+const union _string_u	   _clib_empty_string  = {0};
+const union _wstring_u	   _clib_empty_wstring = {0};
 
 u64 min(u64 _a, u64 _b) {
 	return _a < _b ? _a : _b;
@@ -636,6 +641,13 @@ void str_alloc(
 string str_from(const char *_data) {
 	string _s = str_create();
 	str_cpy_l(&_s, _data);
+	return _s;
+}
+
+/// Create and return a new string containing _char_count elements starting at _data, which is copied
+string strn_from(const char *_data, u64 _char_count) {
+	string _s = str_create();
+	strn_cpy(&_s, _data, _char_count);
 	return _s;
 }
 
@@ -942,6 +954,13 @@ wstring wstr_from(const wchar *_data) {
 	return _s;
 }
 
+/// Create and return a new wstring containing _char_count elements starting at _data, which is copied
+wstring wstrn_from(const wchar *_data, u64 _char_count) {
+	wstring _s = wstr_create();
+	wstrn_cpy(&_s, _data, _char_count);
+	return _s;
+}
+
 /// Create a copy of _wstr
 wstring wstr_dup(const wstring *_wstr) {
 	wstring _s = wstr_create();
@@ -1212,10 +1231,15 @@ extern "C" {
 
 #	if __STDC_VERSION__ >= 201112L /// 201112L == C11
 /* clang-format off */
+
+#		define _str_from_wrapper_F(_type) _type : strn_from,
+#		define str_from_wrapper(...) _Generic((__VA_ARGS__),	\
+			CLIB_INT_TYPES(_str_from_wrapper_F)                  \
+			struct clib_generic_no_arg : str_from)
 #		define str(...) _Generic((CLIB_GENERIC_TYPE_OR_NONE(__VA_ARGS__)),	\
 			string * 					: str_dup,						\
-			char *     					: str_from,                     \
-			const char *     			: str_from, 					\
+			char *     					: str_from_wrapper(CLIB_GENERIC_TYPE_OR_NONE(CLIB_CDR(__VA_ARGS__))),                     \
+			const char *     			: str_from_wrapper(CLIB_GENERIC_TYPE_OR_NONE(CLIB_CDR(__VA_ARGS__))), 					\
 			struct clib_generic_no_arg    	: str_create					\
 		)(__VA_ARGS__)
 
@@ -1256,10 +1280,14 @@ extern "C" {
 			char *    	: str_rev_l 							\
 		)(_string_like)
 
+#		define _wstr_from_wrapper_F(_type) _type : wstrn_from,
+#		define wstr_from_wrapper(...) _Generic((__VA_ARGS__),	\
+			CLIB_INT_TYPES(_wstr_from_wrapper_F)                  \
+			struct clib_generic_no_arg : wstr_from)
 #		define wstr(...) _Generic((CLIB_GENERIC_TYPE_OR_NONE(__VA_ARGS__)),	\
 			wstring * 			: wstr_dup,								\
-			wchar *     			: wstr_from,                        \
-			const wchar *			: wstr_from,                        \
+			wchar *     			: wstr_from_wrapper(CLIB_GENERIC_TYPE_OR_NONE(CLIB_CDR(__VA_ARGS__))),                        \
+			const wchar *			: wstr_from_wrapper(CLIB_GENERIC_TYPE_OR_NONE(CLIB_CDR(__VA_ARGS__))),                        \
 			struct clib_generic_no_arg	: wstr_create						\
 		)(__VA_ARGS__)
 
