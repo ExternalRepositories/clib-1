@@ -20,19 +20,19 @@ extern "C" {
 #	include <stdint.h>
 
 #	if defined(__BYTE_ORDER)
-#		if __BYTE_ORDER == __LITTLE_ENDIAN && !defined(LITTLE_ENDIAN)
-#			define LITTLE_ENDIAN
-#		elif __BYTE_ORDER == __BIG_ENDIAN && !defined(BIG_ENDIAN)
-#			define BIG_ENDIAN
+#		if __BYTE_ORDER == __LITTLE_ENDIAN && !defined(CLIB_LITTLE_ENDIAN)
+#			define CLIB_LITTLE_ENDIAN
+#		elif __BYTE_ORDER == __BIG_ENDIAN && !defined(CLIB_BIG_ENDIAN)
+#			define CLIB_BIG_ENDIAN
 #		endif
 #	endif
 
-#	ifndef BIG_ENDIAN
-#		define LITTLE_ENDIAN
+#	ifndef CLIB_BIG_ENDIAN
+#		define CLIB_LITTLE_ENDIAN
 #	endif
 
-#	if !defined(BIG_ENDIAN) && !defined(LITTLE_ENDIAN) || defined(BIG_ENDIAN) && defined(LITTLE_ENDIAN)
-#		error "Please define either BIG_ENDIAN or LITTLE_ENDIAN before including this header."
+#	if !defined(CLIB_BIG_ENDIAN) && !defined(CLIB_LITTLE_ENDIAN) || defined(CLIB_BIG_ENDIAN) && defined(CLIB_LITTLE_ENDIAN)
+#		error "Please define either CLIB_BIG_ENDIAN or CLIB_LITTLE_ENDIAN before including this header."
 #		include "/Abort Compilation: See Error Above"
 #	endif
 
@@ -118,7 +118,7 @@ typedef float  f32;
 typedef double f64;
 
 /// These are too big for an enum if the machine is little-endian
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 #		define CLIB_WSTR_LONG_FLAG (1lu << 63lu)
 #		define CLIB_STR_LONG_FLAG	(1lu << 63lu)
 #	endif
@@ -128,19 +128,19 @@ enum {
 	CLIB_WSTR_SMALL_RAW_CAPACITY = ((sizeof(wchar *) + sizeof(u64) * 2) / sizeof(wchar) - 1),
 	CLIB_STR_SMALL_RAW_CAPACITY	 = (sizeof(char *) + sizeof(u64) * 2 - 1),
 
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 	CLIB_WSTR_SMALL_MAX_CAPACITY = CLIB_WSTR_SMALL_RAW_CAPACITY,
 	CLIB_WSTR_SMALL_FLAG		 = (1 << (sizeof(wchar) * 8 - 1)),
-#	elif defined(BIG_ENDIAN)
+#	elif defined(CLIB_BIG_ENDIAN)
 	CLIB_WSTR_SMALL_MAX_CAPACITY = (CLIB_WSTR_SMALL_RAW_CAPACITY << 1),
 	CLIB_WSTR_SMALL_FLAG		 = 1,
 	CLIB_WSTR_LONG_FLAG			 = 1,
 #	endif
 
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 	CLIB_STR_SMALL_MAX_CAPACITY = CLIB_STR_SMALL_RAW_CAPACITY,
 	CLIB_STR_SMALL_FLAG			= (1 << 7),
-#	elif defined(BIG_ENDIAN)
+#	elif defined(CLIB_BIG_ENDIAN)
 	CLIB_STR_SMALL_MAX_CAPACITY	 = (CLIB_STR_SMALL_RAW_CAPACITY << 1),
 	CLIB_STR_SMALL_FLAG			 = 1,
 	CLIB_STR_LONG_FLAG			 = 1,
@@ -406,15 +406,15 @@ extern "C" {
 #	include <fcntl.h>
 
 #	if defined(__BYTE_ORDER)
-#		if __BYTE_ORDER == __LITTLE_ENDIAN && !defined(LITTLE_ENDIAN)
-#			define LITTLE_ENDIAN
-#		elif __BYTE_ORDER == __BIG_ENDIAN && !defined(BIG_ENDIAN)
-#			define BIG_ENDIAN
+#		if __BYTE_ORDER == __LITTLE_ENDIAN && !defined(CLIB_LITTLE_ENDIAN)
+#			define CLIB_LITTLE_ENDIAN
+#		elif __BYTE_ORDER == __BIG_ENDIAN && !defined(CLIB_BIG_ENDIAN)
+#			define CLIB_BIG_ENDIAN
 #		endif
 #	endif
 
-#	if !defined(BIG_ENDIAN) && !defined(LITTLE_ENDIAN) || defined(BIG_ENDIAN) && defined(LITTLE_ENDIAN)
-#		error "Please define either BIG_ENDIAN or LITTLE_ENDIAN before including this header."
+#	if !defined(CLIB_BIG_ENDIAN) && !defined(CLIB_LITTLE_ENDIAN) || defined(CLIB_BIG_ENDIAN) && defined(CLIB_LITTLE_ENDIAN)
+#		error "Please define either CLIB_BIG_ENDIAN or CLIB_LITTLE_ENDIAN before including this header."
 #		include "/Abort Compilation: See Error Above"
 #	endif
 
@@ -479,9 +479,9 @@ void die(const char *_fmt, ...) {
 
 /// Check if a string is a small string
 static inline u1 _str_is_small(const string *_str) {
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 	return !(_str->_raw[CLIB_STR_SMALL_RAW_CAPACITY] & (1 << 7));
-#	elif defined(BIG_ENDIAN)
+#	elif defined(CLIB_BIG_ENDIAN)
 	return !(_str->_raw[CLIB_STR_SMALL_RAW_CAPACITY] & 1);
 #	endif
 }
@@ -491,25 +491,25 @@ static inline u1 _str_is_small(const string *_str) {
 /// it must be tested and set in different ways.
 
 static inline void _str_setflag_long(string *_str) {
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 	_str->_raw[CLIB_STR_SMALL_RAW_CAPACITY] |= (1 << 7);
-#	elif defined(BIG_ENDIAN)
+#	elif defined(CLIB_BIG_ENDIAN)
 	_str->_raw[CLIB_STR_SMALL_RAW_CAPACITY] |= 1;
 #	endif
 }
 
 static inline void _str_setflag_small(string *_str) {
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 	_str->_raw[CLIB_STR_SMALL_RAW_CAPACITY] &= ~(1 << 7);
-#	elif defined(BIG_ENDIAN)
+#	elif defined(CLIB_BIG_ENDIAN)
 	_str->_raw[CLIB_STR_SMALL_RAW_CAPACITY] &= ~1;
 #	endif
 }
 
 static inline u64 _str_small_capacity(const string *_str) {
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 	return _str->_small_capacity & ~(1 << 7);
-#	elif defined(BIG_ENDIAN)
+#	elif defined(CLIB_BIG_ENDIAN)
 	return _str->_small_capacity >> 1;
 #	endif
 }
@@ -521,17 +521,17 @@ static inline u8 _str_small_size(const string *_str) {
 
 /// Get the small size of _str
 static inline u64 _str_long_size(const string *_str) {
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 	return _str->_long_size & ~(1lu << 63lu);
-#	elif defined(BIG_ENDIAN)
+#	elif defined(CLIB_BIG_ENDIAN)
 	return _str->_long_size >> 1;
 #	endif
 }
 
 static inline u64 _charcount_to_size(u64 _number_of_chars) {
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 	return _number_of_chars;
-#	elif defined(BIG_ENDIAN)
+#	elif defined(CLIB_BIG_ENDIAN)
 	return _number_of_chars << 1;
 #	endif
 }
@@ -789,9 +789,9 @@ void str_free(string *_str) {
 
 /// Check if a wstring is a small wstring
 static inline u1 _wstr_is_small(const wstring *_wstr) {
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 	return !(_wstr->_raw[CLIB_WSTR_SMALL_RAW_CAPACITY] & (1 << (sizeof(wchar) * 8 - 1)));
-#	elif defined(BIG_ENDIAN)
+#	elif defined(CLIB_BIG_ENDIAN)
 	return !(_wstr->_raw[CLIB_WSTR_SMALL_RAW_CAPACITY] & 1);
 #	endif
 }
@@ -801,25 +801,25 @@ static inline u1 _wstr_is_small(const wstring *_wstr) {
 /// it must be tested and set in different ways.
 
 static inline void _wstr_setflag_long(wstring *_wstr) {
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 	_wstr->_raw[CLIB_WSTR_SMALL_RAW_CAPACITY] |= (1 << (sizeof(wchar) * 8 - 1));
-#	elif defined(BIG_ENDIAN)
+#	elif defined(CLIB_BIG_ENDIAN)
 	_wstr->_raw[CLIB_WSTR_SMALL_RAW_CAPACITY] |= 1;
 #	endif
 }
 
 static inline void _wstr_setflag_small(wstring *_wstr) {
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 	_wstr->_raw[CLIB_WSTR_SMALL_RAW_CAPACITY] &= ~(1 << (sizeof(wchar) * 8 - 1));
-#	elif defined(BIG_ENDIAN)
+#	elif defined(CLIB_BIG_ENDIAN)
 	_wstr->_raw[CLIB_WSTR_SMALL_RAW_CAPACITY] &= ~1;
 #	endif
 }
 
 static inline u64 _wstr_small_capacity(const wstring *_wstr) {
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 	return _wstr->_small_capacity & ~(1 << (sizeof(wchar) * 8 - 1));
-#	elif defined(BIG_ENDIAN)
+#	elif defined(CLIB_BIG_ENDIAN)
 	return _wstr->_small_capacity >> 1;
 #	endif
 }
@@ -831,17 +831,17 @@ static inline u8 _wstr_small_size(const wstring *_wstr) {
 
 /// Get the small size of _wstr
 static inline u64 _wstr_long_size(const wstring *_wstr) {
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 	return _wstr->_long_size & ~(1lu << 63lu);
-#	elif defined(BIG_ENDIAN)
+#	elif defined(CLIB_BIG_ENDIAN)
 	return _wstr->_long_size >> 1;
 #	endif
 }
 
 static inline u64 _wcharcount_to_size(u64 _number_of_wchars) {
-#	if defined(LITTLE_ENDIAN)
+#	if defined(CLIB_LITTLE_ENDIAN)
 	return _number_of_wchars;
-#	elif defined(BIG_ENDIAN)
+#	elif defined(CLIB_BIG_ENDIAN)
 	return _number_of_wchars << 1;
 #	endif
 }
