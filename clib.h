@@ -27,6 +27,10 @@ extern "C" {
 #		endif
 #	endif
 
+#	ifndef BIG_ENDIAN
+#		define LITTLE_ENDIAN
+#	endif
+
 #	if !defined(BIG_ENDIAN) && !defined(LITTLE_ENDIAN) || defined(BIG_ENDIAN) && defined(LITTLE_ENDIAN)
 #		error "Please define either BIG_ENDIAN or LITTLE_ENDIAN before including this header."
 #		include "/Abort Compilation: See Error Above"
