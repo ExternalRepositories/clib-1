@@ -27,10 +27,6 @@ extern "C" {
 #		endif
 #	endif
 
-#	ifndef CLIB_BIG_ENDIAN
-#		define CLIB_LITTLE_ENDIAN
-#	endif
-
 #	if !defined(CLIB_BIG_ENDIAN) && !defined(CLIB_LITTLE_ENDIAN) || defined(CLIB_BIG_ENDIAN) && defined(CLIB_LITTLE_ENDIAN)
 #		error "Please define either CLIB_BIG_ENDIAN or CLIB_LITTLE_ENDIAN before including this header."
 #		include "/Abort Compilation: See Error Above"
